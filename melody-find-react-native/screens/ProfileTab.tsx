@@ -6,9 +6,9 @@ import { Text, View } from '../components/Themed';
 import * as WebBrowser from 'expo-web-browser';
 import { makeRedirectUri, ResponseType, useAuthRequest} from 'expo-auth-session';
 
-import base64 from 'react-native-base64'
-import { withSafeAreaInsets } from 'react-native-safe-area-context';
-import { CONSTANTS } from '../CONSTANTS';
+// import base64 from 'react-native-base64'
+// import { withSafeAreaInsets } from 'react-native-safe-area-context';
+// import { CONSTANTS } from '../CONSTANTS';
 
 
 WebBrowser.maybeCompleteAuthSession();
@@ -19,8 +19,8 @@ const discovery = {
   tokenEndpoint: 'https://accounts.spotify.com/api/token',
 };
 
-const CLIENT_ID = CONSTANTS.CLIENT_ID
-const CLIENT_SECRET = CONSTANTS.CLIENT_SECRET
+// const CLIENT_ID = CONSTANTS.CLIENT_ID
+// const CLIENT_SECRET = CONSTANTS.CLIENT_SECRET
 
 
 export default function TabTwoScreen() {
@@ -45,56 +45,56 @@ export default function TabTwoScreen() {
   );
 
   
-  const getTokenUsingCode = () => {
-    try{
+  // const getTokenUsingCode = () => {
+  //   try{
 
-      const auth = base64.encode(`${CLIENT_ID}` + ':' + `${CLIENT_SECRET}`)
-      console.log(auth)
-      console.log("LOGGING CODE")
-      console.log(code)
+  //     const auth = base64.encode(`${CLIENT_ID}` + ':' + `${CLIENT_SECRET}`)
+  //     console.log(auth)
+  //     console.log("LOGGING CODE")
+  //     console.log(code)
 
-      // let data = new URLSearchParams();
-      // data.append('grant_type', 'authorization_code');
-      // data.append('code', `${code}`);
-      // data.append('redirect_uri', 'exp://192.168.0.4:19000/');
+  //     // let data = new URLSearchParams();
+  //     // data.append('grant_type', 'authorization_code');
+  //     // data.append('code', `${code}`);
+  //     // data.append('redirect_uri', 'exp://192.168.0.4:19000/');
 
-      var data: any = {
-        "grant_type": "authorization_code",
-        "code": `${code}`,
-        "redirect_uri": "exp://192.168.0.4:19000/"
-      }
+  //     var data: any = {
+  //       "grant_type": "authorization_code",
+  //       "code": `${code}`,
+  //       "redirect_uri": "exp://192.168.0.4:19000/"
+  //     }
 
-      let formBody = "grant_type=authorization_code";
-      formBody += "&code=" + `${code}`
-      formBody += "&redirect_uri=" + `exp://192.168.0.4:19000/`
-      formBody += "&client_id=" + CLIENT_ID
-      formBody += "&client_secret=" + CLIENT_SECRET 
+  //     let formBody = "grant_type=authorization_code";
+  //     formBody += "&code=" + `${code}`
+  //     formBody += "&redirect_uri=" + `exp://192.168.0.4:19000/`
+  //     formBody += "&client_id=" + CLIENT_ID
+  //     formBody += "&client_secret=" + CLIENT_SECRET 
 
-      // let headers = new Headers();
-      // headers.append('Content-Type', 'application/x-www-form-urlencoded');
-      // headers.append('Authorization', 'Basic ' + `ZmQxMzFiMDI0YjhiNDBhOTk4YWVjZGFiYTMzOWEyYWY6NzM2OTQ0OWZmNGE4NDYyZjk3ZWRkOGJjMTUzNjY3NTc`)
+  //     // let headers = new Headers();
+  //     // headers.append('Content-Type', 'application/x-www-form-urlencoded');
+  //     // headers.append('Authorization', 'Basic ' + `ZmQxMzFiMDI0YjhiNDBhOTk4YWVjZGFiYTMzOWEyYWY6NzM2OTQ0OWZmNGE4NDYyZjk3ZWRkOGJjMTUzNjY3NTc`)
 
-      console.log("REQUESTING TOKEN")
+  //     console.log("REQUESTING TOKEN")
 
-      fetch('https://accounts.spotify.com/api/token', {
-        method: 'POST',
-        headers: {
-          'Accept': 'application/json',
-          'Content-Type': 'application/x-www-form-urlencoded',
-          'Authorization': 'Basic ZmQxMzFiMDI0YjhiNDBhOTk4YWVjZGFiYTMzOWEyYWY6NzM2OTQ0OWZmNGE4NDYyZjk3ZWRkOGJjMTUzNjY3NTc'
-        },
-        body: formBody
-      })
-      .then(response => {
-        console.log("BEFORE STRINGIFY")
-        console.log('Response: ', JSON.stringify(response)) 
-      })
+  //     fetch('https://accounts.spotify.com/api/token', {
+  //       method: 'POST',
+  //       headers: {
+  //         'Accept': 'application/json',
+  //         'Content-Type': 'application/x-www-form-urlencoded',
+  //         'Authorization': 'Basic ZmQxMzFiMDI0YjhiNDBhOTk4YWVjZGFiYTMzOWEyYWY6NzM2OTQ0OWZmNGE4NDYyZjk3ZWRkOGJjMTUzNjY3NTc'
+  //       },
+  //       body: formBody
+  //     })
+  //     .then(response => {
+  //       console.log("BEFORE STRINGIFY")
+  //       console.log('Response: ', JSON.stringify(response)) 
+  //     })
 
 
-    }catch(error){
-      console.log(error)
-    }
-  }
+  //   }catch(error){
+  //     console.log(error)
+  //   }
+  // }
   
   React.useEffect(() => {
     if (response?.type === 'success') {
@@ -105,13 +105,15 @@ export default function TabTwoScreen() {
   }, [response]);
 
 
-  const base_url = "https://melody-find.herokuapp.com"
-
   const logToken = () => {
-    fetch(`https://melody-find.herokuapp.com/exchange/${code}`)
-    .then(response => {
-      console.log('Response: ', JSON.stringify(response)) 
+    fetch(`https://melody-find.herokuapp.com/exchange/${code}`, {method: 'GET'})
+    .then((response) => {
+      return response.text()
     })
+    .then(response => {
+      return console.log(response)
+    })
+    .catch(error => console.log(error))
   }
 
   return (
@@ -159,5 +161,3 @@ const styles = StyleSheet.create({
     justifyContent: 'space-evenly'
   }
 });
-
-// https://www.youtube.com/watch?v=YmynMyn8o6E&ab_channel=notJust%E2%80%A4dev
