@@ -71,9 +71,9 @@ export default function TabTwoScreen() {
       <View>
         <Text>Genre: {category}</Text>  
         <TouchableOpacity onPress={getSongFromGenre}>
-        <Text style={styles.title}>
+          <Text style={styles.title}>
               Shuffle Genre!
-            </Text>
+          </Text>
         </TouchableOpacity>
       </View>
       :

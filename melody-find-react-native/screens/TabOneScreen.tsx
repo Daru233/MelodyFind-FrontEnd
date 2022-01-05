@@ -4,10 +4,16 @@ import EditScreenInfo from '../components/EditScreenInfo';
 import { Text, View } from '../components/Themed';
 import { RootTabScreenProps } from '../types';
 
+import {
+  auth as SpotifyAuth,
+  remote as SpotifyRemote,
+  ApiScope,
+  ApiConfig,
+} from "react-native-spotify-remote";
 
-let result = "Test variable"
 
 export default function TabOneScreen({ navigation }: RootTabScreenProps<'TabOne'>) {
+
 
 const [track_name, set_track_name] = useState();
 const [track_artist, set_track_artist] = useState<any[]>([]);
@@ -19,7 +25,6 @@ const getMoviesFromApi = () => {
   let movies_url = 'https://reactnative.dev/movies.json'
   let url_home = "https://melody-find.herokuapp.com/"
   let url_random_song = "https://melody-find.herokuapp.com/mf/v1/song"
-  set_has_pressed(true)
   return fetch(url_random_song, {
     method: 'GET',
     headers: {
@@ -33,6 +38,9 @@ const getMoviesFromApi = () => {
       set_track_artist(json[0].track.artists)
       console.log(json[0].track.artists)
       set_track_uri(json[0].track.uri)
+      set_has_pressed(true)
+    }).then(() => {
+
     })
     .catch((error) => {
       console.error(error);
