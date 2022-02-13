@@ -8,6 +8,7 @@ import { Gesture, GestureDetector, GestureHandlerRootView } from 'react-native-g
 import Animated, { useAnimatedGestureHandler, useAnimatedStyle, useDerivedValue, useSharedValue, withSpring } from 'react-native-reanimated';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { StatusBar } from 'expo-status-bar';
+import { FontAwesome, MaterialCommunityIcons, FontAwesome5, Ionicons, Entypo, EvilIcons } from '@expo/vector-icons';
 
 const width = Dimensions.get('window').width
 const height = Dimensions.get('window').height
@@ -59,71 +60,8 @@ const getSongs = () => {
 };
 
 
-  const artistList = track_artist.map((object) => {
-    return(   
-      <Text key={object['id']}>Artist: {object['name']}</Text>
-      // <View></View>
-    )
-  })
-
-
-  const DATA = [
-    {
-      title: 'Afro vibes',
-      location: 'Mumbai, India',
-      date: 'Nov 17th, 2020',
-      poster:
-        'https://www.creative-flyers.com/wp-content/uploads/2020/07/Afro-vibes-flyer-template.jpg',
-    },
-    {
-      title: 'Jungle Party',
-      location: 'Unknown',
-      date: 'Sept 3rd, 2020',
-      poster:
-        'https://www.creative-flyers.com/wp-content/uploads/2019/11/Jungle-Party-Flyer-Template-1.jpg',
-    },
-    {
-      title: '4th Of July',
-      location: 'New York, USA',
-      date: 'Oct 11th, 2020',
-      poster:
-        'https://www.creative-flyers.com/wp-content/uploads/2020/06/4th-Of-July-Invitation.jpg',
-    },
-    {
-      title: 'Summer festival',
-      location: 'Bucharest, Romania',
-      date: 'Aug 17th, 2020',
-      poster:
-        'https://www.creative-flyers.com/wp-content/uploads/2020/07/Summer-Music-Festival-Poster.jpg',
-    },
-    {
-      title: 'BBQ with friends',
-      location: 'Prague, Czech Republic',
-      date: 'Sept 11th, 2020',
-      poster:
-        'https://www.creative-flyers.com/wp-content/uploads/2020/06/BBQ-Flyer-Psd-Template.jpg',
-    },
-    {
-      title: 'Festival music',
-      location: 'Berlin, Germany',
-      date: 'Apr 21th, 2021',
-      poster:
-        'https://www.creative-flyers.com/wp-content/uploads/2020/06/Festival-Music-PSD-Template.jpg',
-    },
-    {
-      title: 'Beach House',
-      location: 'Liboa, Portugal',
-      date: 'Aug 12th, 2020',
-      poster:
-        'https://www.creative-flyers.com/wp-content/uploads/2020/06/Summer-Beach-House-Flyer.jpg',
-    },
-  ];
-
-
   return (
       <View style={styles.container}>
-
-        {/* <GestureDetector gesture={gesture}> */}
 
         <FlatList 
         data={songData}
@@ -136,40 +74,41 @@ const getSongs = () => {
         decelerationRate={'fast'}
         renderItem={({item, index}) => {
 
-          console.log(item.track.album.images[0].url)
+          const artists = item.track.artists.map((artist: any) => {
+            return(
+              <Text style={styles.artists} key={artist.id}>{artist.name}</Text>
+            )
+          })
 
           return(
             <View style={styles.itemContainer}>
-              <Image source={{uri: item.track.album.images[0].url}} style={styles.image}/>
-              <Text style={styles.title}>{item.track.name}</Text>
-              <Text style={styles.data}>{item.track.artists[0].name}</Text>
-              {/* <Text style={styles.data}>{item.track.artists}</Text> */}
+              <View style={styles.songData}>
+                <Image source={{uri: item.track.album.images[0].url}} style={styles.image}/>
+                <View style={styles.titleWrapper}>
+                  <Text adjustsFontSizeToFit={true} style={styles.title}>{item.track.name}</Text>
+                </View>
+                {artists}
+              </View>
+
+              <View style={styles.icons}>
+                <MaterialCommunityIcons 
+                name='heart'
+                color={'white'}
+                size={40}
+                style={{paddingBottom: 25}}/>
+
+                <MaterialCommunityIcons 
+                name='plus'
+                color={'white'}
+                size={48}/>
+
+              </View>
+
             </View>
           )
         }}
         />
 
-        {/* </GestureDetector> */}
-
-
-        {/* <Text style={styles.title}>Melody Find</Text>
-        <View style={styles.separator} lightColor="#eee" darkColor="rgba(255,255,255,0.1)" />
-
-
-        <TouchableOpacity onPress={getMoviesFromApi}>
-        <Text style={styles.title}>
-        Shuffle!
-        </Text>
-        </TouchableOpacity>z
-
-        {has_pressed? 
-        <View style={styles.randomSongResult}>
-        <Text>Title: {track_name}</Text>
-        {artistList}
-        <Text>Uri: {track_uri}</Text>
-        </View>
-        : 
-        <Text>Click Shuffle!</Text>} */}
       </View>
   );
 }
@@ -177,34 +116,33 @@ const getSongs = () => {
 const styles = StyleSheet.create({
   container: {
     // flex: 1,
-    justifyContent: 'center',
+    // justifyContent: 'center',
     width: width,
-    height: height
+    height: height,
   },
   title: {
-    fontSize: 24,
-    fontWeight: '900',
+    fontSize: 28,
+    fontWeight: 'bold',
     textTransform: 'uppercase',
     letterSpacing: -1,
-    alignSelf: 'center'
+    paddingLeft: 30,
+    flex: 1,
+    flexWrap: 'wrap',
   },
-  location: {
-    fontSize: 16,
-  },
-  data: {
-    fontSize: 20,
-    alignSelf: 'center'
+  artists: {
+    fontSize: 18,
+    paddingLeft: 30,
   },
   itemContainer: {
-    // flex: 1,
-    // position: 'absolute',
+    flexDirection: 'row',
+    flex: 1,
     alignSelf: 'center',
     height: height,
     width: width,
     // marginVertical: 16,
-    marginHorizontal: 16,
-    padding: SPACING * 2,
-    // backgroundColor: 'blue'
+    // marginHorizontal: 16,
+    // padding: SPACING,
+    backgroundColor: 'blue',
   },
   itemContainerRow: {
     flexDirection: 'row',
@@ -218,8 +156,25 @@ const styles = StyleSheet.create({
   image: {
     width: ITEM_WIDTH,
     height: ITEM_HEIGHT,
-    borderRadius: 25,
-    alignSelf: 'center'
+    borderRadius: 30,
+    alignSelf: 'center',
+    borderBottomLeftRadius: 5,
+    borderColor: 'white',
+  },
+  songData: {
+    paddingTop: 20,
+    // backgroundColor: 'green',
+    flex: 10,
+  },
+  titleWrapper: {
+    paddingTop: 10,
+    flexDirection: 'row'
+  },
+  icons: {
+    // backgroundColor: 'red',
+    flex: 2,
+    paddingTop: height * 0.2,
+    alignItems: 'center'
   }
    
 });
