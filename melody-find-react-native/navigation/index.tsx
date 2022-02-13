@@ -17,6 +17,7 @@ import NotFoundScreen from '../screens/NotFoundScreen';
 import TabOneScreen from '../screens/TabOneScreen';
 import TabTwoScreen from '../screens/TabTwoScreen';
 import ProfileTab from '../screens/ProfileTab';
+import Playback from '../screens/Playback';
 import { RootStackParamList, RootTabParamList, RootTabScreenProps } from '../types';
 import LinkingConfiguration from './LinkingConfiguration';
 
@@ -96,6 +97,14 @@ function BottomTabNavigator() {
       <BottomTab.Screen
         name="ProfileTab"
         component={ProfileTab}
+        options={{
+          title: 'Profile',
+          tabBarIcon: ({ color }) => <EvilIcons name='user' size={30} style={{marginBottom: -2}} color={color} />,
+        }}
+      />
+            <BottomTab.Screen
+        name="Playback"
+        component={Playback}
         options={{
           title: 'Profile',
           tabBarIcon: ({ color }) => <EvilIcons name='user' size={30} style={{marginBottom: -2}} color={color} />,

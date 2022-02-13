@@ -2,6 +2,7 @@ import { StyleSheet, TouchableOpacity, Linking, Button } from 'react-native';
 import React, { useState, useEffect, Component } from 'react';
 import EditScreenInfo from '../components/EditScreenInfo';
 import { Text, View } from '../components/Themed';
+import * as SecureStore from 'expo-secure-store';
 
 import * as WebBrowser from 'expo-web-browser';
 import { makeRedirectUri, ResponseType, useAuthRequest} from 'expo-auth-session';
@@ -10,10 +11,22 @@ import { makeRedirectUri, ResponseType, useAuthRequest} from 'expo-auth-session'
 // import { withSafeAreaInsets } from 'react-native-safe-area-context';
 // import { CONSTANTS } from '../CONSTANTS';
 
+async function setToken(key: string, value: string) {
+  await SecureStore.setItemAsync(key, value);
+}
+
+async function getToken(key: string) {
+  let result = await SecureStore.getItemAsync(key);
+  if (result) {
+    console.log(result)
+    return result
+  } else {
+    console.log('token not found')
+  }
+}
 
 WebBrowser.maybeCompleteAuthSession();
 
-// Endpoint
 const discovery = {
   authorizationEndpoint: 'https://accounts.spotify.com/authorize',
   tokenEndpoint: 'https://accounts.spotify.com/api/token',
@@ -21,7 +34,6 @@ const discovery = {
 
 // const CLIENT_ID = CONSTANTS.CLIENT_ID
 // const CLIENT_SECRET = CONSTANTS.CLIENT_SECRET
-
 
 export default function TabTwoScreen() {
 
@@ -33,7 +45,7 @@ export default function TabTwoScreen() {
     {
       responseType: ResponseType.Code,
       clientId: 'fd131b024b8b40a998aecdaba339a2af',
-      scopes: ['user-read-email', 'playlist-modify-public'],
+      scopes: ['user-read-email', 'playlist-modify-public', 'user-read-playback-state', 'user-modify-playback-state'],
       // In order to follow the "Authorization Code Flow" to fetch token after authorizationEndpoint
       // this must be set to false
       usePKCE: false,
@@ -44,77 +56,31 @@ export default function TabTwoScreen() {
     discovery
   );
 
-  
-  // const getTokenUsingCode = () => {
-  //   try{
 
-  //     const auth = base64.encode(`${CLIENT_ID}` + ':' + `${CLIENT_SECRET}`)
-  //     console.log(auth)
-  //     console.log("LOGGING CODE")
-  //     console.log(code)
-
-  //     // let data = new URLSearchParams();
-  //     // data.append('grant_type', 'authorization_code');
-  //     // data.append('code', `${code}`);
-  //     // data.append('redirect_uri', 'exp://192.168.0.4:19000/');
-
-  //     var data: any = {
-  //       "grant_type": "authorization_code",
-  //       "code": `${code}`,
-  //       "redirect_uri": "exp://192.168.0.4:19000/"
-  //     }
-
-  //     let formBody = "grant_type=authorization_code";
-  //     formBody += "&code=" + `${code}`
-  //     formBody += "&redirect_uri=" + `exp://192.168.0.4:19000/`
-  //     formBody += "&client_id=" + CLIENT_ID
-  //     formBody += "&client_secret=" + CLIENT_SECRET 
-
-  //     // let headers = new Headers();
-  //     // headers.append('Content-Type', 'application/x-www-form-urlencoded');
-  //     // headers.append('Authorization', 'Basic ' + `ZmQxMzFiMDI0YjhiNDBhOTk4YWVjZGFiYTMzOWEyYWY6NzM2OTQ0OWZmNGE4NDYyZjk3ZWRkOGJjMTUzNjY3NTc`)
-
-  //     console.log("REQUESTING TOKEN")
-
-  //     fetch('https://accounts.spotify.com/api/token', {
-  //       method: 'POST',
-  //       headers: {
-  //         'Accept': 'application/json',
-  //         'Content-Type': 'application/x-www-form-urlencoded',
-  //         'Authorization': 'Basic ZmQxMzFiMDI0YjhiNDBhOTk4YWVjZGFiYTMzOWEyYWY6NzM2OTQ0OWZmNGE4NDYyZjk3ZWRkOGJjMTUzNjY3NTc'
-  //       },
-  //       body: formBody
-  //     })
-  //     .then(response => {
-  //       console.log("BEFORE STRINGIFY")
-  //       console.log('Response: ', JSON.stringify(response)) 
-  //     })
-
-
-  //   }catch(error){
-  //     console.log(error)
-  //   }
-  // }
-  
+  // after code is returned
+  // automatically exchange the code for the access and refresh token
   React.useEffect(() => {
     if (response?.type === 'success') {
       console.log(response)
       const { code } = response.params;
-        set_code(code)
+        fetch(`https://melody-find.herokuapp.com/exchange/${code}`, {method: 'GET'})
+        .then((response) => {
+          return response.text()
+        })
+        .then((response) => {
+          return JSON.parse(response)
+        })
+        .then(response => {
+          // return console.log(response)
+          setToken('access_token', response['access_token'])
+          setToken('refresh_token',  response['refresh_token'])
+          return response;
+        })
+        .catch(error => console.log(error))
       }
+
   }, [response]);
 
-
-  const logToken = () => {
-    fetch(`https://melody-find.herokuapp.com/exchange/${code}`, {method: 'GET'})
-    .then((response) => {
-      return response.text()
-    })
-    .then(response => {
-      return console.log(response)
-    })
-    .catch(error => console.log(error))
-  }
 
   return (
     <View style={styles.container}>
@@ -131,8 +97,8 @@ export default function TabTwoScreen() {
       <Button
         title="log token"
         onPress={() => {
-          logToken();
-          }}
+          getToken('access_token')
+        }}
       />
 
 
