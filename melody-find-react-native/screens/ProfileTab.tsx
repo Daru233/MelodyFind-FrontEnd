@@ -1,29 +1,10 @@
-import { StyleSheet, TouchableOpacity, Linking, Button } from 'react-native';
+import { StyleSheet, TouchableOpacity, Linking, Pressable, Image } from 'react-native';
 import React, { useState, useEffect, Component } from 'react';
 import EditScreenInfo from '../components/EditScreenInfo';
 import { Text, View } from '../components/Themed';
 import * as SecureStore from 'expo-secure-store';
-
 import * as WebBrowser from 'expo-web-browser';
 import { makeRedirectUri, ResponseType, useAuthRequest} from 'expo-auth-session';
-
-// import base64 from 'react-native-base64'
-// import { withSafeAreaInsets } from 'react-native-safe-area-context';
-// import { CONSTANTS } from '../CONSTANTS';
-
-async function setToken(key: string, value: string) {
-  await SecureStore.setItemAsync(key, value);
-}
-
-async function getToken(key: string) {
-  let result = await SecureStore.getItemAsync(key);
-  if (result) {
-    console.log(result)
-    return result
-  } else {
-    console.log('token not found')
-  }
-}
 
 WebBrowser.maybeCompleteAuthSession();
 
@@ -32,14 +13,66 @@ const discovery = {
   tokenEndpoint: 'https://accounts.spotify.com/api/token',
 };
 
-// const CLIENT_ID = CONSTANTS.CLIENT_ID
-// const CLIENT_SECRET = CONSTANTS.CLIENT_SECRET
 
 export default function TabTwoScreen() {
 
-  // will be stored more securely, this is for prototype demo only
-  const [request_token, set_request_token] = useState('')
-  const [code, set_code] = useState("");
+  const [isLoggedIn, setIsLoggedIn] = useState(false);
+  const [profileData, setProfileData] = useState<any>();
+
+  async function setToken(key: string, value: string) {
+    await SecureStore.setItemAsync(key, value);
+  }
+  
+  async function checkToken() {
+    SecureStore.getItemAsync('token')
+    .then((token) => {
+      let meUrl = `https://melody-find.herokuapp.com/me/${token}`
+    fetch(meUrl, {
+      method: 'GET',
+      headers: {
+        Accept: 'application/json',
+        'Content-Type': 'application/json'
+      }
+    })
+    .then((response) => response.json())
+    .then((json) => {
+      // if token expired request auth 
+      // TO DO - check for refresh token before promoting to authorize again
+      if(json[1] == 401){
+        // promptAsync()
+        console.log("prompt async")
+      } 
+       
+      if(json[1] == 200){
+        setProfileData(json[0])
+        setIsLoggedIn(true)
+      }
+      console.log(json)
+
+    })
+    .catch((error) => {
+      console.log(error)
+    })
+
+    })
+
+    // check if token is valid 
+    // 
+
+
+
+    // if valid display profile
+
+    // else get a new token
+
+    // if (result) {
+    //   console.log(result)
+    //   return result
+    // } else {
+    //   console.log('Token does not exist, logging in.')
+    //   promptAsync();
+    // }
+  }
   
   const [request, response, promptAsync] = useAuthRequest(
     {
@@ -71,9 +104,9 @@ export default function TabTwoScreen() {
           return JSON.parse(response)
         })
         .then(response => {
-          // return console.log(response)
-          setToken('access_token', response['access_token'])
-          setToken('refresh_token',  response['refresh_token'])
+          setToken('token', response['access_token']);
+          console.log(response['access_token'])
+          setIsLoggedIn(true)
           return response;
         })
         .catch(error => console.log(error))
@@ -81,27 +114,35 @@ export default function TabTwoScreen() {
 
   }, [response]);
 
-
   return (
     <View style={styles.container}>
-      <Text style={styles.title}>Profile</Text>
-
-      <Button
-        disabled={!request}
-        title="Login"
-        onPress={() => {
-          promptAsync();
-          }}
-      />
-
-      <Button
-        title="log token"
-        onPress={() => {
-          getToken('access_token')
-        }}
-      />
 
 
+      {isLoggedIn? 
+
+      <View>
+        <Text>Hey, {profileData.response.display_name}</Text>
+        <Image source={{uri: profileData.response.images[0].url}} style={styles.image}/>
+
+      </View>
+      
+      : 
+
+      <View>
+        <Pressable style={styles.button} disabled={!request} onPress={() => {
+        checkToken();
+        }}>
+        <Text style={styles.text}>Log In</Text>
+        </Pressable>
+
+        <Pressable style={styles.button} disabled={!request} onPress={() => {
+        promptAsync();
+        }}>
+        <Text style={styles.text}>Get Token dev only</Text>
+        </Pressable>
+      </View> 
+
+      }
 
     </View>
   );
@@ -117,13 +158,25 @@ const styles = StyleSheet.create({
     fontSize: 20,
     fontWeight: 'bold',
   },
-  separator: {
-    marginVertical: 30,
-    height: 1,
-    width: '80%',
+  text: {
+    fontSize: 26,
+    // fontWeight: 'bold',
   },
-  genre: {
-    alignItems: 'baseline',
-    justifyContent: 'space-evenly'
+  button:{
+    alignItems: 'center',
+    justifyContent: 'center',
+    paddingVertical: 8,
+    paddingHorizontal: 32,
+    borderRadius: 6,
+    elevation: 3,
+    borderColor: '#1DB954',
+    borderWidth: 2,
+    marginBottom: 30
+    // backgroundColor: 'blue',
+  },
+  image: {
+    width: 260,
+    height: 260,
+    borderRadius: 50,
   }
 });

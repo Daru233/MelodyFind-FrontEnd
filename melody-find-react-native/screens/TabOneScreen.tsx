@@ -1,5 +1,5 @@
 import { Alert, StyleSheet, TouchableOpacity, FlatList, Dimensions, Image } from 'react-native';
-import React, { useEffect, useRef, useState } from 'react';
+import React, { useCallback, useEffect, useRef, useState } from 'react';
 import EditScreenInfo from '../components/EditScreenInfo';
 import { Text, View } from '../components/Themed';
 import { Song } from '../components/SongComponent'
@@ -9,6 +9,8 @@ import Animated, { useAnimatedGestureHandler, useAnimatedStyle, useDerivedValue,
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { StatusBar } from 'expo-status-bar';
 import { FontAwesome, MaterialCommunityIcons, FontAwesome5, Ionicons, Entypo, EvilIcons } from '@expo/vector-icons';
+import { Audio } from 'expo-av';
+import * as SecureStore from 'expo-secure-store';
 
 const width = Dimensions.get('window').width
 const height = Dimensions.get('window').height
@@ -19,10 +21,6 @@ const ITEM_HEIGHT = ITEM_WIDTH * 1.7
 
 export default function TabOneScreen({ navigation }: RootTabScreenProps<'TabOne'>) {
 
-const [track_name, set_track_name] = useState();
-const [track_artist, set_track_artist] = useState<any[]>([]);
-const [track_uri, set_track_uri] = useState();
-const [has_pressed, set_has_pressed] = useState(false);
 const [songData, setSongData] = useState();
 
 useEffect(() => {
@@ -30,10 +28,36 @@ useEffect(() => {
   getSongs()
 }, [])
 
+async function getValueFor() {
+  let result = await SecureStore.getItemAsync('token');
+  if (result) {
+    // alert("🔐 Here's your value 🔐 \n" + result);
+    return await result;
+  } else {
+    alert('Login to hear the music');
+  }
+}
+
+async function playTrack(uri: string){
+  let token = await getValueFor()
+
+  let playback_url = `https://melody-find.herokuapp.com/start_playback/${uri}` + `${token}`
+  fetch(playback_url, {
+    method: 'GET',
+    headers: {
+      Accept: 'application/json',
+      'Content-Type': 'application/json'
+    }
+  })
+  .then((response) => response.json())
+  .then((json) => {
+    console.log(json)
+  })
+
+}
 
 const getSongs = () => {
   let url_random_song = "https://melody-find.herokuapp.com/mf/v1/song"
-  let url_dev_server = 'http://127.0.0.1:5000/mf/v1/song'
   return fetch(url_random_song, {
     method: 'GET',
     headers: {
@@ -43,16 +67,8 @@ const getSongs = () => {
   })
     .then((response) => response.json())
     .then((json) => {
-      // console.log(json)
-      // set_track_name(json[0].track.name)
-      // set_track_artist(json[0].track.artists)
-      // console.log(json[0].track.artists)
-      // set_track_uri(json[0].track.uri)
       setSongData(json[0])
-      // console.log(json[1])
-      console.log('REQUESTING DATA')
-    }).then(() => {
-
+      // console.log(json[0])
     })
     .catch((error) => {
       console.error(error);
@@ -60,18 +76,26 @@ const getSongs = () => {
 };
 
 
+const onViewableItemsChanged = useCallback(({viewableItems, changed}) => {
+  console.log(viewableItems[0].item.track.uri) 
+  // playTrack(viewableItems[0].item.track.uri);
+},[])
+
+const viewabilityConfig = {itemVisiblePercentThreshold: 50}
+
   return (
       <View style={styles.container}>
 
         <FlatList 
         data={songData}
         keyExtractor={(_, index) => String(index)}
-        inverted
         showsHorizontalScrollIndicator={false}
         showsVerticalScrollIndicator={false}
         snapToInterval={height}
         snapToAlignment={'start'}
         decelerationRate={'fast'}
+        onViewableItemsChanged={onViewableItemsChanged}
+        viewabilityConfig={viewabilityConfig}
         renderItem={({item, index}) => {
 
           const artists = item.track.artists.map((artist: any) => {
@@ -173,7 +197,7 @@ const styles = StyleSheet.create({
   icons: {
     // backgroundColor: 'red',
     flex: 2,
-    paddingTop: height * 0.2,
+    paddingTop: height * 0.3,
     alignItems: 'center'
   }
    
