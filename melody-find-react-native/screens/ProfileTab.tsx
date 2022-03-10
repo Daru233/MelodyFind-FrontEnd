@@ -17,7 +17,7 @@ const discovery = {
 export default function TabTwoScreen() {
 
   const [isLoggedIn, setIsLoggedIn] = useState(false);
-  const [profileData, setProfileData] = useState<any>();
+  const [profileData, setProfileData] = useState<any>({'':''});
 
   async function setToken(key: string, value: string) {
     await SecureStore.setItemAsync(key, value);
@@ -36,8 +36,6 @@ export default function TabTwoScreen() {
     })
     .then((response) => response.json())
     .then((json) => {
-      // if token expired request auth 
-      // TO DO - check for refresh token before promoting to authorize again
       if(json[1] == 401){
         // promptAsync()
         console.log("prompt async")
@@ -45,9 +43,11 @@ export default function TabTwoScreen() {
        
       if(json[1] == 200){
         setProfileData(json[0])
-        setIsLoggedIn(true)
       }
       console.log(json)
+
+    })
+    .then(() => {
 
     })
     .catch((error) => {
@@ -56,29 +56,13 @@ export default function TabTwoScreen() {
 
     })
 
-    // check if token is valid 
-    // 
-
-
-
-    // if valid display profile
-
-    // else get a new token
-
-    // if (result) {
-    //   console.log(result)
-    //   return result
-    // } else {
-    //   console.log('Token does not exist, logging in.')
-    //   promptAsync();
-    // }
   }
   
   const [request, response, promptAsync] = useAuthRequest(
     {
       responseType: ResponseType.Code,
       clientId: 'fd131b024b8b40a998aecdaba339a2af',
-      scopes: ['user-read-email', 'playlist-modify-public', 'user-read-playback-state', 'user-modify-playback-state'],
+      scopes: ['user-read-email', 'playlist-modify-public', 'user-read-playback-state', 'user-modify-playback-state', 'user-library-read', 'user-top-read'],
       // In order to follow the "Authorization Code Flow" to fetch token after authorizationEndpoint
       // this must be set to false
       usePKCE: false,
@@ -106,7 +90,6 @@ export default function TabTwoScreen() {
         .then(response => {
           setToken('token', response['access_token']);
           console.log(response['access_token'])
-          setIsLoggedIn(true)
           return response;
         })
         .catch(error => console.log(error))
@@ -123,7 +106,6 @@ export default function TabTwoScreen() {
       <View>
         <Text>Hey, {profileData.response.display_name}</Text>
         <Image source={{uri: profileData.response.images[0].url}} style={styles.image}/>
-
       </View>
       
       : 
