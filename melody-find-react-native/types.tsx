@@ -28,7 +28,7 @@ export type RootTabParamList = {
   DiscoverScreen: undefined;
   GenresScreen: undefined;
   ProfileTab: undefined;
-  Playback: undefined;
+  SignIn: undefined;
 };
 
 export type RootTabScreenProps<Screen extends keyof RootTabParamList> = CompositeScreenProps<
