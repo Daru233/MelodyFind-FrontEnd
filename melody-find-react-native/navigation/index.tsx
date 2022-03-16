@@ -1,30 +1,27 @@
-/**
- * If you are not familiar with React Navigation, refer to the "Fundamentals" guide:
- * https://reactnavigation.org/docs/getting-started
- *
- */
 import { FontAwesome, MaterialCommunityIcons, FontAwesome5, Ionicons, Entypo, EvilIcons } from '@expo/vector-icons';
 import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
 import { NavigationContainer, DefaultTheme, DarkTheme } from '@react-navigation/native';
 import { createNativeStackNavigator } from '@react-navigation/native-stack';
 import * as React from 'react';
 import { ColorSchemeName, Pressable } from 'react-native';
+import axios from 'axios';
+import { endpoints } from '../endpoint';
 
 import Colors from '../constants/Colors';
 import useColorScheme from '../hooks/useColorScheme';
 import ModalScreen from '../screens/ModalScreen';
 import NotFoundScreen from '../screens/NotFoundScreen';
-import TabOneScreen from '../screens/TabOneScreen';
-import TabTwoScreen from '../screens/TabTwoScreen';
-import ProfileTab from '../screens/ProfileTab';
-import Playback from '../screens/Playback';
+import DiscoverScreen from '../screens/TabOneScreen';
+import GenresScreen from '../screens/TabTwoScreen';
+import { AuthContext } from './AuthContext';
+import SignIn from '../screens/SignInScreen';
 import { RootStackParamList, RootTabParamList, RootTabScreenProps } from '../types';
-import LinkingConfiguration from './LinkingConfiguration';
+import { useState, useReducer, useMemo } from 'react';
+import * as SecureStore from 'expo-secure-store';
 
 export default function Navigation({ colorScheme }: { colorScheme: ColorSchemeName }) {
   return (
     <NavigationContainer
-      linking={LinkingConfiguration}
       theme={colorScheme === 'dark' ? DarkTheme : DefaultTheme}>
       <RootNavigator />
     </NavigationContainer>
@@ -41,10 +38,6 @@ function RootNavigator() {
   return (
     <Stack.Navigator>
       <Stack.Screen name="Root" component={BottomTabNavigator} options={{ headerShown: false }} />
-      <Stack.Screen name="NotFound" component={NotFoundScreen} options={{ title: 'Oops!' }} />
-      <Stack.Group screenOptions={{ presentation: 'modal' }}>
-        <Stack.Screen name="Modal" component={ModalScreen} />
-      </Stack.Group>
     </Stack.Navigator>
   );
 }
@@ -56,70 +49,187 @@ function RootNavigator() {
 const BottomTab = createBottomTabNavigator<RootTabParamList>();
 
 function BottomTabNavigator() {
+
+  const [isLoggedIn, setIsLoggedIn] = useState<Boolean>(true)
+
   const colorScheme = useColorScheme();
 
-  return (
-    <BottomTab.Navigator
-      initialRouteName="TabOne"
-      screenOptions={{
-        tabBarActiveTintColor: Colors[colorScheme].tint,
-      }}>
-      <BottomTab.Screen
-        name="TabOne"
-        component={TabOneScreen}
-        options={({ navigation }: RootTabScreenProps<'TabOne'>) => ({
-          title: 'Home',  
-          tabBarIcon: ({ color }) => <Entypo name='home' size={30} style={{marginBottom: -2}} color={color}/>,
-          headerRight: () => (
-            <Pressable
-              onPress={() => navigation.navigate('Modal')}
-              style={({ pressed }) => ({
-                opacity: pressed ? 0.5 : 1,
-              })}>
-              <FontAwesome
-                name="info-circle"
-                size={25}
-                color={Colors[colorScheme].text}
-                style={{ marginRight: 15 }}
-              />
-            </Pressable>
-          ),
-        })}
-      />
-      <BottomTab.Screen
-        name="TabTwo"
-        component={TabTwoScreen}
-        options={{
-          title: 'Genres',
-          tabBarIcon: ({ color }) => <EvilIcons name='search' size={30} style={{marginBottom: -2}} color={color} />,
-        }}
-      />
-      <BottomTab.Screen
-        name="ProfileTab"
-        component={ProfileTab}
-        options={{
-          title: 'Profile',
-          tabBarIcon: ({ color }) => <EvilIcons name='user' size={30} style={{marginBottom: -2}} color={color} />,
-        }}
-      />
-            <BottomTab.Screen
-        name="Playback"
-        component={Playback}
-        options={{
-          title: 'Profile',
-          tabBarIcon: ({ color }) => <EvilIcons name='user' size={30} style={{marginBottom: -2}} color={color} />,
-        }}
-      />
-    </BottomTab.Navigator>
-  );
-}
 
-/**
- * You can explore the built-in icon families and icons on the web at https://icons.expo.fyi/
- */
-function TabBarIcon(props: {
-  name: React.ComponentProps<typeof FontAwesome>['name'];
-  color: string;
-}) {
-  return <FontAwesome size={30} style={{ marginBottom: -3 }} {...props} />;
+  const [state, dispatch] = React.useReducer(
+    (prevState: any, action: any) => {
+      switch (action.type) {
+        case 'LOGGED_OUT':
+          return {
+            ...prevState,
+            isLoggedIn: false,
+            token: null,
+          };
+        case 'LOGGED_IN':
+          return {
+            ...prevState,
+            isLoggedIn: true,
+            token: action.token,
+          };
+        case 'SIGN_OUT':
+          return {
+            ...prevState,
+            isLoggedIn: false,
+            token: null,
+          };
+      }
+      },
+      {
+        isLoggedIn: false,
+        userToken: null,
+      }
+  )
+
+  const loggedIn = useMemo(() => ({isLoggedIn, setIsLoggedIn}), [isLoggedIn, setIsLoggedIn])
+
+  async function set_token(key: string, value: string) {
+    await SecureStore.setItemAsync(key, value);
+    setIsLoggedIn(true)
+  }
+
+  async function set_refresh_token(key: string, value: string) {
+    await SecureStore.setItemAsync(key, value);
+    setIsLoggedIn(true)
+  }
+
+  React.useEffect(() => {
+    // Fetch the token from storage then navigate to our appropriate place
+    const bootstrapAsync = async () => {
+      let token: any;
+      let refresh_token: any;
+
+      try {
+        token = await SecureStore.getItemAsync('token');
+        refresh_token = await SecureStore.getItemAsync('refresh_token');
+
+        // if (typeof token == 'string') {
+        //   console.log('CHECKING IF TOKEN IS VALID')
+        //   // request /me endopint to check if token is valid
+        //   axios.get(endpoints.profile, {
+        //     headers: {
+        //       'Authorization': `Bearer ${token}` 
+        //     }
+        //   })
+        //   .then((response) => {
+        //     console.log(response.status)
+        //     if(response.status == 200){
+        //       setIsLoggedIn(true)
+        //       console.log('token is valid')
+        //       dispatch({ type: 'LOGGED_IN', token: token });
+        //     }
+        //   })
+        //   .catch((error) => {
+        //     if(error.response.status == 401){
+        //       console.log('token is not valid')
+        //       dispatch({ type: 'LOGGED_OUT', token: token });
+        //     }
+        //   })
+        // }
+
+        if (token == null){
+          dispatch({ type: 'LOGGED_OUT', token: token });
+        }
+
+
+      } catch (e) {
+        // Restoring token failed
+      }
+
+
+      
+    };
+
+    bootstrapAsync();
+  }, []);
+
+    
+
+    return (
+      <AuthContext.Provider value={loggedIn}>
+        {loggedIn.isLoggedIn ? 
+        (<BottomTab.Navigator
+          initialRouteName="ProfileTab"
+          screenOptions={{
+            tabBarActiveTintColor: Colors[colorScheme].tint,
+          }}>
+          <BottomTab.Screen
+          name="DiscoverScreen"
+          component={DiscoverScreen}
+          options={({ navigation }: RootTabScreenProps<'DiscoverScreen'>) => ({
+          title: 'Discover',  
+          tabBarIcon: ({ color }) => <Entypo name='home' size={30} style={{marginBottom: -2}} color={color}/>,
+          })}
+          />
+          <BottomTab.Screen
+          name="GenresScreen"
+          component={GenresScreen}
+          options={{
+            title: 'Genres',
+            tabBarIcon: ({ color }) => <EvilIcons name='search' size={30} style={{marginBottom: -2}} color={color} />,
+          }}
+        />
+          </BottomTab.Navigator>) 
+        :
+        (<BottomTab.Navigator
+          initialRouteName="SignIn"
+          screenOptions={{
+            tabBarActiveTintColor: Colors[colorScheme].tint,
+          }}>
+          <BottomTab.Screen
+          name="SignIn"
+          component={SignIn}
+          options={{
+            title: 'Sign In',
+            tabBarIcon: ({ color }) => <EvilIcons name='user' size={30} style={{marginBottom: -2}} color={color} />,
+          }}
+          />
+          </BottomTab.Navigator>)}
+      </AuthContext.Provider>
+    )
+  
+
+//   <BottomTab.Navigator
+//   initialRouteName="DiscoverScreen"
+//   screenOptions={{
+//     tabBarActiveTintColor: Colors[colorScheme].tint,
+//   }}>
+{/* <BottomTab.Screen
+  name="DiscoverScreen"
+  component={DiscoverScreen}
+  options={({ navigation }: RootTabScreenProps<'DiscoverScreen'>) => ({
+    title: 'Discover',  
+    tabBarIcon: ({ color }) => <Entypo name='home' size={30} style={{marginBottom: -2}} color={color}/>,
+  })}
+/>  */}
+// <BottomTab.Screen
+//   name="GenresScreen"
+//   component={GenresScreen}
+//   options={{
+//     title: 'Genres',
+//     tabBarIcon: ({ color }) => <EvilIcons name='search' size={30} style={{marginBottom: -2}} color={color} />,
+//   }}
+// />
+// <BottomTab.Screen
+//   name="ProfileTab"
+//   component={ProfileTab}
+//   options={{
+//     title: 'Profile',
+//     tabBarIcon: ({ color }) => <EvilIcons name='user' size={30} style={{marginBottom: -2}} color={color} />,
+//   }}
+// />
+// <BottomTab.Screen
+//   name="Playback"
+//   component={Playback}
+//   options={{
+//     title: 'Playback',
+//     tabBarIcon: ({ color }) => <EvilIcons name='gear' size={30} style={{marginBottom: -2}} color={color} />,
+//   }}
+// />
+// </BottomTab.Navigator>
+
+  
 }

@@ -1,16 +1,12 @@
-import { Alert, StyleSheet, TouchableOpacity, FlatList, Dimensions, Image } from 'react-native';
-import React, { useCallback, useEffect, useRef, useState } from 'react';
-import EditScreenInfo from '../components/EditScreenInfo';
+import { Alert, StyleSheet, FlatList, Dimensions, Image, Pressable, ActivityIndicator} from 'react-native';
+import React, { useCallback, useEffect, useState } from 'react';
 import { Text, View } from '../components/Themed';
-import { Song } from '../components/SongComponent'
 import { RootTabScreenProps } from '../types';
-import { Gesture, GestureDetector, GestureHandlerRootView } from 'react-native-gesture-handler';
-import Animated, { useAnimatedGestureHandler, useAnimatedStyle, useDerivedValue, useSharedValue, withSpring } from 'react-native-reanimated';
-import { SafeAreaView } from 'react-native-safe-area-context';
-import { StatusBar } from 'expo-status-bar';
-import { FontAwesome, MaterialCommunityIcons, FontAwesome5, Ionicons, Entypo, EvilIcons } from '@expo/vector-icons';
-import { Audio } from 'expo-av';
 import * as SecureStore from 'expo-secure-store';
+import axios from 'axios'
+import { endpoints } from '../endpoint'
+import ScrollComponent from '../components/ScrollComponent'
+import { color } from 'react-native-reanimated';
 
 const width = Dimensions.get('window').width
 const height = Dimensions.get('window').height
@@ -19,19 +15,40 @@ const SPACING = 10;
 const ITEM_WIDTH = width * 0.8;
 const ITEM_HEIGHT = ITEM_WIDTH * 1.7
 
-export default function TabOneScreen({ navigation }: RootTabScreenProps<'TabOne'>) {
+export default function DiscoverScreen({}: RootTabScreenProps<'DiscoverScreen'>) {
 
-const [songData, setSongData] = useState();
+const [songData, setSongData] = useState<any>([]);
+const [hasDataLoaded, setHasDataLoaded] = useState(false)
 
 useEffect(() => {
   console.log("Logged from useEffect !")
-  getSongs()
+
+  const getSongs = async () => {
+    let token = await getValueFor()
+  
+    axios.get(endpoints.recommendations, {
+      headers: {
+        'Authorization': `Bearer ${token}` 
+      }
+    })
+    .then((response) => {
+      setSongData(response.data)
+    })
+    .then(() => {
+      setHasDataLoaded(true)
+    })
+    .catch((error) => {
+      console.log(error)
+    })
+  };
+
+  getSongs();
 }, [])
 
+// aasdf
 async function getValueFor() {
   let result = await SecureStore.getItemAsync('token');
   if (result) {
-    // alert("🔐 Here's your value 🔐 \n" + result);
     return await result;
   } else {
     alert('Login to hear the music');
@@ -40,53 +57,44 @@ async function getValueFor() {
 
 async function playTrack(uri: string){
   let token = await getValueFor()
-
-  let playback_url = `https://melody-find.herokuapp.com/start_playback/${uri}` + `${token}`
-  fetch(playback_url, {
-    method: 'GET',
+  axios.get(endpoints.playback + '/' + uri, {
     headers: {
-      Accept: 'application/json',
-      'Content-Type': 'application/json'
+      'Authorization': `Basic ${token}` 
     }
   })
-  .then((response) => response.json())
-  .then((json) => {
-    console.log(json)
+  .then((response) => {
+    console.log(response)
   })
-
+  .catch((error) => {
+    console.log(error)
+  })
 }
-
-const getSongs = () => {
-  let url_random_song = "https://melody-find.herokuapp.com/mf/v1/song"
-  return fetch(url_random_song, {
-    method: 'GET',
-    headers: {
-      Accept: 'application/json',
-      'Content-Type': 'application/json'
-    }
-  })
-    .then((response) => response.json())
-    .then((json) => {
-      setSongData(json[0])
-      // console.log(json[0])
-    })
-    .catch((error) => {
-      console.error(error);
-    });
-};
 
 
 const onViewableItemsChanged = useCallback(({viewableItems, changed}) => {
-  console.log(viewableItems[0].item.track.uri) 
-  // playTrack(viewableItems[0].item.track.uri);
+  setTimeout(() => {
+    playTrack(viewableItems[0].item.uri)
+  }, 1500)
+  console.log(viewableItems[0].item.uri) 
 },[])
 
 const viewabilityConfig = {itemVisiblePercentThreshold: 50}
 
   return (
-      <View style={styles.container}>
 
-        <FlatList 
+    <View style={styles.container}>
+
+      {hasDataLoaded ? 
+      <>
+        {/* <ScrollComponent data={songData}></ScrollComponent>  */}
+        <ActivityIndicator size='large' color='#00ff00'/>
+      </>
+      :
+      <ActivityIndicator size='large' color='#00ff00'/>}
+
+      {/* <View style={styles.container}> */}
+
+        {/* <FlatList 
         data={songData}
         keyExtractor={(_, index) => String(index)}
         showsHorizontalScrollIndicator={false}
@@ -98,7 +106,7 @@ const viewabilityConfig = {itemVisiblePercentThreshold: 50}
         viewabilityConfig={viewabilityConfig}
         renderItem={({item, index}) => {
 
-          const artists = item.track.artists.map((artist: any) => {
+          const artists = item.artists.map((artist: any) => {
             return(
               <Text style={styles.artists} key={artist.id}>{artist.name}</Text>
             )
@@ -107,40 +115,61 @@ const viewabilityConfig = {itemVisiblePercentThreshold: 50}
           return(
             <View style={styles.itemContainer}>
               <View style={styles.songData}>
-                <Image source={{uri: item.track.album.images[0].url}} style={styles.image}/>
+                <Image source={{uri: item.album.images[0].url}} style={styles.image}/>
                 <View style={styles.titleWrapper}>
-                  <Text adjustsFontSizeToFit={true} style={styles.title}>{item.track.name}</Text>
+                  <Text adjustsFontSizeToFit={true} style={styles.title}>{item.name}</Text>
                 </View>
                 {artists}
               </View>
 
               <View style={styles.icons}>
-                <MaterialCommunityIcons 
-                name='heart'
-                color={'white'}
-                size={40}
-                style={{paddingBottom: 25}}/>
 
-                <MaterialCommunityIcons 
-                name='plus'
-                color={'white'}
-                size={48}/>
+                <Pressable onPress={() => {
+                  console.log('Pressed Heart');
+                  }}>
+                  <MaterialCommunityIcons 
+                  name='heart'
+                  color={'white'}
+                  size={40}
+                  style={{paddingBottom: 25}}/>
+                </Pressable>
+
+                <Pressable onPress={() => {
+                  console.log('Pressed Plus');
+                  }}>
+                  <MaterialCommunityIcons 
+                  name='plus'
+                  color={'white'}
+                  size={48}
+                  style={{paddingBottom: 25}}/>
+                </Pressable>
+
+                <Pressable onPress={() => {
+                  console.log('Play/Pause Track');
+                  }}>
+                  <MaterialCommunityIcons 
+                  name='play'
+                  color={'white'}
+                  size={48}/>
+                </Pressable>
 
               </View>
-
             </View>
           )
         }}
-        />
+        /> */}
+
+      
 
       </View>
+    
   );
 }
 
 const styles = StyleSheet.create({
   container: {
     // flex: 1,
-    // justifyContent: 'center',
+    justifyContent: 'center',
     width: width,
     height: height,
   },
