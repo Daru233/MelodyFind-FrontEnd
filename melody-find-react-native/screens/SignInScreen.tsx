@@ -1,9 +1,9 @@
-import { StyleSheet, TouchableOpacity, Linking, Button, FlatList, Dimensions, SafeAreaView, Pressable } from 'react-native';
+import { StyleSheet, TouchableOpacity, Linking, Button, FlatList, Dimensions, SafeAreaView, Pressable, TouchableNativeFeedback } from 'react-native';
 import React, { useState, useEffect, Component } from 'react';
 import { Text, View } from '../components/Themed';
 import axios from 'axios';
 import * as SecureStore from 'expo-secure-store';
-import { AuthContext } from '../navigation/index';
+import { AuthContext } from '../navigation/AuthContext';
 import { makeRedirectUri, ResponseType, useAuthRequest} from 'expo-auth-session';
 
 export default function SignIn() {
@@ -32,6 +32,7 @@ export default function SignIn() {
 
   async function setToken(key: string, value: string) {
     await SecureStore.setItemAsync(key, value);
+    setIsLoggedIn(true)
   }
 
   React.useEffect(() => {
@@ -55,22 +56,20 @@ export default function SignIn() {
 
   }, [response]);
 
-  function testFunction() {
-    console.log('Inside the test function')
-    setIsLoggedIn(!isLoggedIn)
-  }
-
   return (
     <View style={styles.container}>
       <Text style={styles.title}>
         Melody Find
       </Text>
       <View style={styles.horizontalLine} />
-      <Pressable style={styles.button} onPress={() => {promptAsync();}}>
+
+      <Pressable style={styles.button}
+      onPress={() => {promptAsync();}}>
         <Text style={styles.paragraph}>
           Log In
         </Text>
       </Pressable>
+
       <Text style={styles.paragraph}>
           Connect to your Spotify Account
       </Text>
@@ -112,6 +111,9 @@ const styles = StyleSheet.create({
     width: 200,
     marginTop: 40,
     marginBottom: 40
+  },
+  pressIn: {
+    backgroundColor: 'green',
   }
 });
 

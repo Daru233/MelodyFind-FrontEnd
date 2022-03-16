@@ -4,7 +4,7 @@ import EditScreenInfo from '../components/EditScreenInfo';
 import { Text, View } from '../components/Themed';
 
 
-export default function TabTwoScreen() {
+export default function GenresScreen() {
 
   const [has_chosen, set_has_chosen] = useState<Boolean>(false);
   const [category, setCategory] = useState<String>();

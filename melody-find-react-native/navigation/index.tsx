@@ -4,6 +4,8 @@ import { NavigationContainer, DefaultTheme, DarkTheme } from '@react-navigation/
 import { createNativeStackNavigator } from '@react-navigation/native-stack';
 import * as React from 'react';
 import { ColorSchemeName, Pressable } from 'react-native';
+import axios from 'axios';
+import { endpoints } from '../endpoint';
 
 import Colors from '../constants/Colors';
 import useColorScheme from '../hooks/useColorScheme';
@@ -11,6 +13,7 @@ import ModalScreen from '../screens/ModalScreen';
 import NotFoundScreen from '../screens/NotFoundScreen';
 import DiscoverScreen from '../screens/TabOneScreen';
 import GenresScreen from '../screens/TabTwoScreen';
+import { AuthContext } from './AuthContext';
 import SignIn from '../screens/SignInScreen';
 import { RootStackParamList, RootTabParamList, RootTabScreenProps } from '../types';
 import { useState, useReducer, useMemo } from 'react';
@@ -44,11 +47,10 @@ function RootNavigator() {
  * https://reactnavigation.org/docs/bottom-tab-navigator
  */
 const BottomTab = createBottomTabNavigator<RootTabParamList>();
-export const AuthContext = React.createContext(null!);
 
 function BottomTabNavigator() {
 
-  const [isLoggedIn, setIsLoggedIn] = useState<Boolean>(false)
+  const [isLoggedIn, setIsLoggedIn] = useState<Boolean>(true)
 
   const colorScheme = useColorScheme();
 
@@ -60,19 +62,19 @@ function BottomTabNavigator() {
           return {
             ...prevState,
             isLoggedIn: false,
-            userToken: null,
+            token: null,
           };
         case 'LOGGED_IN':
           return {
             ...prevState,
             isLoggedIn: true,
-            userToken: action.token,
+            token: action.token,
           };
         case 'SIGN_OUT':
           return {
             ...prevState,
             isLoggedIn: false,
-            userToken: null,
+            token: null,
           };
       }
       },
@@ -82,21 +84,54 @@ function BottomTabNavigator() {
       }
   )
 
+  const loggedIn = useMemo(() => ({isLoggedIn, setIsLoggedIn}), [isLoggedIn, setIsLoggedIn])
+
+  async function set_token(key: string, value: string) {
+    await SecureStore.setItemAsync(key, value);
+    setIsLoggedIn(true)
+  }
+
+  async function set_refresh_token(key: string, value: string) {
+    await SecureStore.setItemAsync(key, value);
+    setIsLoggedIn(true)
+  }
+
   React.useEffect(() => {
     // Fetch the token from storage then navigate to our appropriate place
     const bootstrapAsync = async () => {
-      let userToken;
+      let token: any;
+      let refresh_token: any;
 
       try {
-        userToken = await SecureStore.getItemAsync('token');
+        token = await SecureStore.getItemAsync('token');
+        refresh_token = await SecureStore.getItemAsync('refresh_token');
 
-        if (userToken == null){
-          dispatch({ type: 'SIGN_IN', token: userToken });
-        }
+        // if (typeof token == 'string') {
+        //   console.log('CHECKING IF TOKEN IS VALID')
+        //   // request /me endopint to check if token is valid
+        //   axios.get(endpoints.profile, {
+        //     headers: {
+        //       'Authorization': `Bearer ${token}` 
+        //     }
+        //   })
+        //   .then((response) => {
+        //     console.log(response.status)
+        //     if(response.status == 200){
+        //       setIsLoggedIn(true)
+        //       console.log('token is valid')
+        //       dispatch({ type: 'LOGGED_IN', token: token });
+        //     }
+        //   })
+        //   .catch((error) => {
+        //     if(error.response.status == 401){
+        //       console.log('token is not valid')
+        //       dispatch({ type: 'LOGGED_OUT', token: token });
+        //     }
+        //   })
+        // }
 
-        if (userToken) {
-          // request /me endopint to check if token is valid
-          console.log('TOKEN EXISTS')
+        if (token == null){
+          dispatch({ type: 'LOGGED_OUT', token: token });
         }
 
 
@@ -104,17 +139,14 @@ function BottomTabNavigator() {
         // Restoring token failed
       }
 
-      // After restoring token, we may need to validate it in production apps
 
-      // This will switch to the App screen or Auth screen and this loading
-      // screen will be unmounted and thrown away.
       
     };
 
     bootstrapAsync();
   }, []);
 
-    const loggedIn = useMemo(() => ({isLoggedIn, setIsLoggedIn}), [isLoggedIn, setIsLoggedIn])
+    
 
     return (
       <AuthContext.Provider value={loggedIn}>
@@ -124,14 +156,14 @@ function BottomTabNavigator() {
           screenOptions={{
             tabBarActiveTintColor: Colors[colorScheme].tint,
           }}>
-          {/* <BottomTab.Screen
+          <BottomTab.Screen
           name="DiscoverScreen"
           component={DiscoverScreen}
           options={({ navigation }: RootTabScreenProps<'DiscoverScreen'>) => ({
           title: 'Discover',  
           tabBarIcon: ({ color }) => <Entypo name='home' size={30} style={{marginBottom: -2}} color={color}/>,
           })}
-          /> */}
+          />
           <BottomTab.Screen
           name="GenresScreen"
           component={GenresScreen}

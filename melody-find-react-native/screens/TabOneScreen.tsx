@@ -1,11 +1,12 @@
-import { Alert, StyleSheet, FlatList, Dimensions, Image, Pressable} from 'react-native';
+import { Alert, StyleSheet, FlatList, Dimensions, Image, Pressable, ActivityIndicator} from 'react-native';
 import React, { useCallback, useEffect, useState } from 'react';
 import { Text, View } from '../components/Themed';
 import { RootTabScreenProps } from '../types';
-import { MaterialCommunityIcons } from '@expo/vector-icons';
 import * as SecureStore from 'expo-secure-store';
 import axios from 'axios'
 import { endpoints } from '../endpoint'
+import ScrollComponent from '../components/ScrollComponent'
+import { color } from 'react-native-reanimated';
 
 const width = Dimensions.get('window').width
 const height = Dimensions.get('window').height
@@ -14,13 +15,34 @@ const SPACING = 10;
 const ITEM_WIDTH = width * 0.8;
 const ITEM_HEIGHT = ITEM_WIDTH * 1.7
 
-export default function DiscoverScreen({ navigation }: RootTabScreenProps<'DiscoverScreen'>) {
+export default function DiscoverScreen({}: RootTabScreenProps<'DiscoverScreen'>) {
 
 const [songData, setSongData] = useState<any>([]);
+const [hasDataLoaded, setHasDataLoaded] = useState(false)
 
 useEffect(() => {
   console.log("Logged from useEffect !")
-  getSongs()
+
+  const getSongs = async () => {
+    let token = await getValueFor()
+  
+    axios.get(endpoints.recommendations, {
+      headers: {
+        'Authorization': `Bearer ${token}` 
+      }
+    })
+    .then((response) => {
+      setSongData(response.data)
+    })
+    .then(() => {
+      setHasDataLoaded(true)
+    })
+    .catch((error) => {
+      console.log(error)
+    })
+  };
+
+  getSongs();
 }, [])
 
 // aasdf
@@ -48,22 +70,6 @@ async function playTrack(uri: string){
   })
 }
 
-const getSongs = async () => {
-  let token = await getValueFor()
-
-  axios.get(endpoints.recommendations, {
-    headers: {
-      'Authorization': `Bearer ${token}` 
-    }
-  })
-  .then((response) => {
-    setSongData(response.data)
-  })
-  .catch((error) => {
-    console.log(error)
-  })
-};
-
 
 const onViewableItemsChanged = useCallback(({viewableItems, changed}) => {
   setTimeout(() => {
@@ -76,9 +82,19 @@ const viewabilityConfig = {itemVisiblePercentThreshold: 50}
 
   return (
 
-      <View style={styles.container}>
+    <View style={styles.container}>
 
-        <FlatList 
+      {hasDataLoaded ? 
+      <>
+        {/* <ScrollComponent data={songData}></ScrollComponent>  */}
+        <ActivityIndicator size='large' color='#00ff00'/>
+      </>
+      :
+      <ActivityIndicator size='large' color='#00ff00'/>}
+
+      {/* <View style={styles.container}> */}
+
+        {/* <FlatList 
         data={songData}
         keyExtractor={(_, index) => String(index)}
         showsHorizontalScrollIndicator={false}
@@ -141,18 +157,19 @@ const viewabilityConfig = {itemVisiblePercentThreshold: 50}
             </View>
           )
         }}
-        />
+        /> */}
 
-      </View>
       
 
+      </View>
+    
   );
 }
 
 const styles = StyleSheet.create({
   container: {
     // flex: 1,
-    // justifyContent: 'center',
+    justifyContent: 'center',
     width: width,
     height: height,
   },
