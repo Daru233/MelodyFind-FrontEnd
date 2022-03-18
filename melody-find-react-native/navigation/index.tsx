@@ -4,6 +4,7 @@ import { NavigationContainer, DefaultTheme, DarkTheme } from '@react-navigation/
 import { createNativeStackNavigator } from '@react-navigation/native-stack';
 import * as React from 'react';
 import { ColorSchemeName, Pressable } from 'react-native';
+import { Text, View } from '../components/Themed';
 import axios from 'axios';
 import { endpoints } from '../endpoint';
 
@@ -13,6 +14,8 @@ import ModalScreen from '../screens/ModalScreen';
 import NotFoundScreen from '../screens/NotFoundScreen';
 import DiscoverScreen from '../screens/TabOneScreen';
 import GenresScreen from '../screens/TabTwoScreen';
+import Profile from '../screens/ProfileTab';
+
 import { AuthContext } from './AuthContext';
 import SignIn from '../screens/SignInScreen';
 import { RootStackParamList, RootTabParamList, RootTabScreenProps } from '../types';
@@ -160,7 +163,8 @@ function BottomTabNavigator() {
           name="DiscoverScreen"
           component={DiscoverScreen}
           options={({ navigation }: RootTabScreenProps<'DiscoverScreen'>) => ({
-          title: 'Discover',  
+          headerTitle: (props: any) => <Text style={{paddingLeft: 25, fontSize: 30}}>Discover</Text>,
+          title: 'Discover',
           tabBarIcon: ({ color }) => <Entypo name='home' size={30} style={{marginBottom: -2}} color={color}/>,
           })}
           />
@@ -168,10 +172,20 @@ function BottomTabNavigator() {
           name="GenresScreen"
           component={GenresScreen}
           options={{
+            headerTitle: (props: any) => <Text style={{paddingLeft: 25, fontSize: 30}}>Genres</Text>,
             title: 'Genres',
             tabBarIcon: ({ color }) => <EvilIcons name='search' size={30} style={{marginBottom: -2}} color={color} />,
           }}
-        />
+          />
+          <BottomTab.Screen
+          name="Profile"
+          component={Profile}
+          options={{
+            headerTitle: (props: any) => <Text style={{paddingLeft: 25, fontSize: 30}}>Profile</Text>,
+            title: 'Profile',
+            tabBarIcon: ({ color }) => <EvilIcons name='user' size={30} style={{marginBottom: -2}} color={color} />,
+          }}
+          />
           </BottomTab.Navigator>) 
         :
         (<BottomTab.Navigator

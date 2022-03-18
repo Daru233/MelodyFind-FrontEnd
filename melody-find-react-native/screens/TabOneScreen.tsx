@@ -42,7 +42,8 @@ useEffect(() => {
     })
   };
 
-  getSongs();
+  // UNCOMMENT
+  // getSongs();
 }, [])
 
 // aasdf
