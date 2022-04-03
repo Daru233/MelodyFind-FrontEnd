@@ -1,13 +1,18 @@
-import { StyleSheet, Modal, Alert, Pressable } from "react-native";
-import React, { useState } from 'react';
+import { StyleSheet, Modal, Alert, Pressable, ActivityIndicator } from "react-native";
+import React, { useEffect, useState } from 'react';
 import { Text, View } from '../components/Themed';
 import ScrollComponent from '../components/ScrollComponent'
+import axios from "axios";
+import { endpoints } from "../endpoint";
+import * as SecureStore from 'expo-secure-store';
 
 
 export default function GenresScreen() {
 
   const [modalVisible, setModalVisible] = useState(false);
   const [chosenGenre, setChosenGenre] = useState('');
+  const [songData, setSongData] = useState<any>([]);
+  const [hasDataLoaded, setHasDataLoaded] = useState(false)
 
   const generateColor = () => {
     const randomColor = Math.floor(Math.random() * 16777215)
@@ -15,6 +20,42 @@ export default function GenresScreen() {
       .padStart(6, '0');
     return `#${randomColor}`;
   };
+
+  useEffect(() => {
+    console.log("Logged from useEffect CHOOSE GENRE!")
+  
+    const getSongs = async () => {
+      let token = await getValueFor()
+    
+      axios.get(endpoints.recommendations, {
+        headers: {
+          'Authorization': `Bearer ${token}` 
+        }
+      })
+      .then((response) => {
+        setSongData(response.data)
+      })
+      .then(() => {
+        setHasDataLoaded(true)
+      })
+      .catch((error) => {
+        console.log(error)
+      })
+    };
+  
+    // UNCOMMENT
+    // getSongs();
+  }, [])
+
+
+  async function getValueFor() {
+    let result = await SecureStore.getItemAsync('token');
+    if (result) {
+      return await result;
+    } else {
+      alert('Login to hear the music');
+    }
+  }
 
 
   const GenreContainer = (props: any) => {
@@ -31,6 +72,14 @@ export default function GenresScreen() {
   const TestComponent = () => {
     return(
       <View>
+
+        {hasDataLoaded ? 
+        <>
+          <ScrollComponent data={songData}></ScrollComponent> 
+          <ActivityIndicator size='large' color='#00ff00'/>
+        </>
+        :
+        <ActivityIndicator size='large' color='#00ff00'/>}
         <Text>
          This is a test to see if a component can be rendered in a modal
         </Text>

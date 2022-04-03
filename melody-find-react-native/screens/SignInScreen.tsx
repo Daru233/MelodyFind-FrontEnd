@@ -66,16 +66,11 @@ export default function SignIn() {
       <Pressable style={styles.button}
       onPress={() => {promptAsync();}}>
         <Text style={styles.paragraph}>
-          Log In
+          Connect with Spotify
         </Text>
       </Pressable>
 
-      <Text style={styles.paragraph}>
-          Connect to your Spotify Account
-      </Text>
-      <Text>
-        {isLoggedIn? <Text>True</Text>: <Text>False</Text> }
-      </Text>
+      {/* <Text style={styles.paragraph}>Connect to your Spotify Account</Text> */}
     </View>
   );
 }
