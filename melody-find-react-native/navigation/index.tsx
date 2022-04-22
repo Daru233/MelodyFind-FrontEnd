@@ -4,6 +4,7 @@ import { NavigationContainer, DefaultTheme, DarkTheme } from '@react-navigation/
 import { createNativeStackNavigator } from '@react-navigation/native-stack';
 import * as React from 'react';
 import { ColorSchemeName, Pressable } from 'react-native';
+import { Text, View } from '../components/Themed';
 import axios from 'axios';
 import { endpoints } from '../endpoint';
 
@@ -13,6 +14,8 @@ import ModalScreen from '../screens/ModalScreen';
 import NotFoundScreen from '../screens/NotFoundScreen';
 import DiscoverScreen from '../screens/TabOneScreen';
 import GenresScreen from '../screens/TabTwoScreen';
+import Profile from '../screens/ProfileTab';
+
 import { AuthContext } from './AuthContext';
 import SignIn from '../screens/SignInScreen';
 import { RootStackParamList, RootTabParamList, RootTabScreenProps } from '../types';
@@ -49,11 +52,10 @@ function RootNavigator() {
 const BottomTab = createBottomTabNavigator<RootTabParamList>();
 
 function BottomTabNavigator() {
-
-  const [isLoggedIn, setIsLoggedIn] = useState<Boolean>(true)
+ 
+  const [isLoggedIn, setIsLoggedIn] = useState<Boolean>(false)
 
   const colorScheme = useColorScheme();
-
 
   const [state, dispatch] = React.useReducer(
     (prevState: any, action: any) => {
@@ -96,6 +98,13 @@ function BottomTabNavigator() {
     setIsLoggedIn(true)
   }
 
+  async function getValueFor() {
+    let result = await SecureStore.getItemAsync('token');
+    if (result) {
+      return await result;
+    } 
+  }
+
   React.useEffect(() => {
     // Fetch the token from storage then navigate to our appropriate place
     const bootstrapAsync = async () => {
@@ -106,39 +115,36 @@ function BottomTabNavigator() {
         token = await SecureStore.getItemAsync('token');
         refresh_token = await SecureStore.getItemAsync('refresh_token');
 
-        // if (typeof token == 'string') {
-        //   console.log('CHECKING IF TOKEN IS VALID')
-        //   // request /me endopint to check if token is valid
-        //   axios.get(endpoints.profile, {
-        //     headers: {
-        //       'Authorization': `Bearer ${token}` 
-        //     }
-        //   })
-        //   .then((response) => {
-        //     console.log(response.status)
-        //     if(response.status == 200){
-        //       setIsLoggedIn(true)
-        //       console.log('token is valid')
-        //       dispatch({ type: 'LOGGED_IN', token: token });
-        //     }
-        //   })
-        //   .catch((error) => {
-        //     if(error.response.status == 401){
-        //       console.log('token is not valid')
-        //       dispatch({ type: 'LOGGED_OUT', token: token });
-        //     }
-        //   })
-        // }
+        // check if token is valid, request on /me
+        const getProfile = async () => {
+          let token = await getValueFor()
+        
+          axios.get(endpoints.profile, {
+            headers: {
+              'Authorization': `Bearer ${token}` 
+            }
+          })
+          .then((response) => {
+            console.log(response)
+            if(response.status == 200){
+              setIsLoggedIn(true)
+            }
+          })
+          .then(() => {
 
-        if (token == null){
-          dispatch({ type: 'LOGGED_OUT', token: token });
-        }
+          })
+          .catch((error) => {
+            console.log(error)
+          })
+        };
 
+        // if not 200 prompt to log in
+
+        getProfile()
 
       } catch (e) {
         // Restoring token failed
       }
-
 
       
     };
@@ -160,7 +166,8 @@ function BottomTabNavigator() {
           name="DiscoverScreen"
           component={DiscoverScreen}
           options={({ navigation }: RootTabScreenProps<'DiscoverScreen'>) => ({
-          title: 'Discover',  
+          headerTitle: (props: any) => <Text style={{paddingLeft: 25, fontSize: 30}}>Discover</Text>,
+          title: 'Discover',
           tabBarIcon: ({ color }) => <Entypo name='home' size={30} style={{marginBottom: -2}} color={color}/>,
           })}
           />
@@ -168,10 +175,20 @@ function BottomTabNavigator() {
           name="GenresScreen"
           component={GenresScreen}
           options={{
+            headerTitle: (props: any) => <Text style={{paddingLeft: 25, fontSize: 30}}>Genres</Text>,
             title: 'Genres',
             tabBarIcon: ({ color }) => <EvilIcons name='search' size={30} style={{marginBottom: -2}} color={color} />,
           }}
-        />
+          />
+          <BottomTab.Screen
+          name="Profile"
+          component={Profile}
+          options={{
+            headerTitle: (props: any) => <Text style={{paddingLeft: 25, fontSize: 30}}>Profile</Text>,
+            title: 'Profile',
+            tabBarIcon: ({ color }) => <EvilIcons name='user' size={30} style={{marginBottom: -2}} color={color} />,
+          }}
+          />
           </BottomTab.Navigator>) 
         :
         (<BottomTab.Navigator

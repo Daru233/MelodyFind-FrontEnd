@@ -1,4 +1,4 @@
-import { Alert, StyleSheet, FlatList, Dimensions, Image, Pressable, ActivityIndicator} from 'react-native';
+import { Alert, StyleSheet, FlatList, Dimensions, Image, Pressable, ActivityIndicator, SafeAreaView} from 'react-native';
 import React, { useCallback, useEffect, useState } from 'react';
 import { Text, View } from '../components/Themed';
 import { RootTabScreenProps } from '../types';
@@ -42,6 +42,7 @@ useEffect(() => {
     })
   };
 
+  // UNCOMMENT
   getSongs();
 }, [])
 
@@ -55,39 +56,39 @@ async function getValueFor() {
   }
 }
 
-async function playTrack(uri: string){
-  let token = await getValueFor()
-  axios.get(endpoints.playback + '/' + uri, {
-    headers: {
-      'Authorization': `Basic ${token}` 
-    }
-  })
-  .then((response) => {
-    console.log(response)
-  })
-  .catch((error) => {
-    console.log(error)
-  })
-}
+// async function playTrack(uri: string){
+//   let token = await getValueFor()
+//   axios.get(endpoints.playback + '/' + uri, {
+//     headers: {
+//       'Authorization': `Basic ${token}` 
+//     }
+//   })
+//   .then((response) => {
+//     console.log(response)
+//   })
+//   .catch((error) => {
+//     console.log(error)
+//   })
+// }
 
 
-const onViewableItemsChanged = useCallback(({viewableItems, changed}) => {
-  setTimeout(() => {
-    playTrack(viewableItems[0].item.uri)
-  }, 1500)
-  console.log(viewableItems[0].item.uri) 
-},[])
+// const onViewableItemsChanged = useCallback(({viewableItems, changed}) => {
+//   setTimeout(() => {
+//     playTrack(viewableItems[0].item.uri)
+//   }, 1500)
+//   console.log(viewableItems[0].item.uri) 
+// },[])
 
 const viewabilityConfig = {itemVisiblePercentThreshold: 50}
 
   return (
 
-    <View style={styles.container}>
+    <SafeAreaView style={styles.container}>
 
       {hasDataLoaded ? 
       <>
-        {/* <ScrollComponent data={songData}></ScrollComponent>  */}
-        <ActivityIndicator size='large' color='#00ff00'/>
+        <ScrollComponent data={songData}></ScrollComponent> 
+        {/* <ActivityIndicator size='large' color='#00ff00'/> */}
       </>
       :
       <ActivityIndicator size='large' color='#00ff00'/>}
@@ -161,7 +162,7 @@ const viewabilityConfig = {itemVisiblePercentThreshold: 50}
 
       
 
-      </View>
+      </SafeAreaView>
     
   );
 }
