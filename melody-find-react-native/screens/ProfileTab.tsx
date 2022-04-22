@@ -104,8 +104,8 @@ const styles = StyleSheet.create({
     // backgroundColor: 'blue',
   },
   image: {
-    width: 300,
-    height: 300,
+    width: 150,
+    height: 150,
     borderRadius: 50,
   }
 });

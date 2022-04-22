@@ -2,7 +2,7 @@ import { MaterialCommunityIcons } from '@expo/vector-icons';
 import axios from 'axios';
 import * as WebBrowser from 'expo-web-browser';
 import { useCallback } from 'react';
-import { Dimensions, FlatList, Pressable, StyleSheet, TouchableOpacity, Image } from 'react-native';
+import { Dimensions, FlatList, Pressable, StyleSheet, TouchableOpacity, Image, Modal, SafeAreaView, ActivityIndicator, Alert} from 'react-native';
 
 import Colors from '../constants/Colors';
 import { endpoints } from '../endpoint';
@@ -20,19 +20,136 @@ const ITEM_HEIGHT = ITEM_WIDTH * 1.7
 
 export default function ScrollComponent(data: any) {
 
+const [userPlaylists, setUserplaylists] = useState()
+const [hasPlaylistLoaded, setHasPlaylistLoaded] = useState(false)
+const [currentTrack, setCurrentTrack] = useState('');
+const [heartPressed, setHeartPressed] = useState(false);
+const [hasLiked, setHasLiked] = useState<Array<string>>([''])
+const [modalVisible, setModalVisible] = useState(false);
+
 const onViewableItemsChanged = useCallback(({viewableItems, changed}) => {
+    setHeartPressed(false)
+    setModalVisible(false)
+    setCurrentTrack(viewableItems[0].item.uri)
+    // console.log(currentTrack)
     setTimeout(() => {
         playTrack(viewableItems[0].item.uri)
-    }, 1500)
-    console.log(viewableItems[0].item.uri) 
+    }, 2500)
+    
     },[])
 
 
-console.log(data)
+  async function get_playlists(){
+    let token = await getValueFor()
+  
+    axios.get(endpoints.playlist, {
+        headers: {
+        'Authorization': `Bearer ${token}` 
+        }
+    })
+    .then((response) => {
+      console.log(response.data)
+      setUserplaylists(response.data)
+      setHasPlaylistLoaded(true)
+    })
+    .then(() => {
+      setModalVisible(true)
+    })
+    .catch((error) => {
+        console.log(error)
+    })
+  }
 
+
+async function saveTrack(){
+  let token = await getValueFor()
+  console.log('CURRENT TRACK: ' + currentTrack)
+
+  axios.get(endpoints.save + '/' + currentTrack.toString(), {
+      headers: {
+      'Authorization': `Bearer ${token}` 
+      }
+  })
+  .then((response) => {
+      setHeartPressed(true)
+  })
+  .catch((error) => {
+      console.log(error)
+  })
+}
+
+
+async function addTrackToPlayList(playlistId: any, currentTrack: string){
+  let token = await getValueFor()
+  console.log('CURRENT TRACK: ' + currentTrack)
+
+  axios.get(endpoints.add_to_playlist + '/' + playlistId + '/' + currentTrack, {
+      headers: {
+      'Authorization': `Bearer ${token}` 
+      }
+  })
+  .then((response) => {
+    
+  })
+  .catch((error) => {
+      console.log(error)
+  })
+}
+
+
+  function RenderPlaylist(){
+    return(
+      <SafeAreaView>
+        <FlatList 
+        data={userPlaylists}
+        renderItem={({item}) => 
+        <View style={styles.playlisRenderStyle}>
+          <Pressable
+          onPress={() => {
+            console.log(item.id);
+            console.log(currentTrack)
+            addTrackToPlayList(item.id, currentTrack)
+            Alert.alert('Success' ,`added to ${item.name}`)
+            setModalVisible(false)
+          }}
+          >
+          <Text style={styles.textStyle}>{item.name}</Text>
+          </Pressable>
+        </View>}
+        />
+      </SafeAreaView>
+    )
+  }
 
   return (
     <View style={styles.container}>
+
+      <Modal
+      animationType="slide"
+      transparent={true}
+      visible={modalVisible}
+      onRequestClose={() => {
+        setModalVisible(!modalVisible);
+      }}
+    >
+
+      <SafeAreaView style={styles.playlistContainer}>
+        <Pressable
+          onPress={() => {setModalVisible(!modalVisible);}}
+        >
+          <Text style={styles.textStyle}>back</Text>
+        </Pressable>
+        {hasPlaylistLoaded?
+        <RenderPlaylist />
+        :
+        <ActivityIndicator size='large' color='#00ff00'/>}
+        
+        
+
+      </SafeAreaView>
+
+    </ Modal>
+
 
     <FlatList 
     data={data.data}
@@ -65,17 +182,25 @@ console.log(data)
           <View style={styles.icons}>
 
             <Pressable onPress={() => {
-              console.log('Pressed Heart');
+              saveTrack(); 
               }}>
+              {heartPressed?
+              <MaterialCommunityIcons 
+              name='heart'
+              color={'red'}
+              size={40}
+              style={{paddingBottom: 25}}/>
+              :
               <MaterialCommunityIcons 
               name='heart'
               color={'white'}
               size={40}
-              style={{paddingBottom: 25}}/>
+              style={{paddingBottom: 25}}/>}
             </Pressable>
 
             <Pressable onPress={() => {
               console.log('Pressed Plus');
+              get_playlists();
               }}>
               <MaterialCommunityIcons 
               name='plus'
@@ -103,32 +228,33 @@ console.log(data)
   );
 }
 
-const viewabilityConfig = {itemVisiblePercentThreshold: 50}
+  const viewabilityConfig = {itemVisiblePercentThreshold: 50}
 
-async function getValueFor() {
-let result = await SecureStore.getItemAsync('token');
-if (result) {
-    return await result;
-} else {
-    alert('Login to hear the music');
-}
-}
-
-
-async function playTrack(uri: string){
-let token = await getValueFor()
-axios.get(endpoints.playback + '/' + uri, {
-    headers: {
-    'Authorization': `Basic ${token}` 
+  async function getValueFor() {
+    let result = await SecureStore.getItemAsync('token');
+    console.log(result)
+    if (result) {
+        return await result;
+    } else {
+        alert('Login to hear the music');
     }
-})
-.then((response) => {
-    console.log(response)
-})
-.catch((error) => {
-    console.log(error)
-})
-}
+  }
+
+
+  async function playTrack(uri: string){
+    let token = await getValueFor()
+    axios.get(endpoints.playback + '/' + uri, {
+        headers: {
+        'Authorization': `Bearer ${token}` 
+        }
+    })
+    .then((response) => {
+        // console.log(response)
+    })
+    .catch((error) => {
+        // console.log(error)
+    })
+  }
 
 
 const styles = StyleSheet.create({
@@ -193,6 +319,35 @@ const styles = StyleSheet.create({
       flex: 2,
       paddingTop: height * 0.3,
       alignItems: 'center'
-    }
+    },
+    playlistContainer: {
+      marginTop: 10,
+      marginBottom: height / 2,
+      // flexDirection: 'row',
+      flex: 1,
+      alignSelf: 'flex-end',
+      height: height,
+      width: width/2,
+      marginVertical: 16,
+      marginHorizontal: 16,
+      // padding: SPACING,
+      backgroundColor: '#202124',
+      borderRadius: 30
+    },
+    textStyle: {
+      marginTop: 8,
+      fontSize: 16,
+      marginHorizontal: 20,
+      color: "white",
+      fontWeight: "bold",
+      textAlign: "center"
+    },
+    playlisRenderStyle: {
+      marginTop: 20,
+      fontWeight: "bold",
+      textAlign: "center",
+      backgroundColor: '#35363A',
+      borderRadius: 30
+    },
      
   });

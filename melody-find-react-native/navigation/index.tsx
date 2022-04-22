@@ -52,11 +52,10 @@ function RootNavigator() {
 const BottomTab = createBottomTabNavigator<RootTabParamList>();
 
 function BottomTabNavigator() {
-
-  const [isLoggedIn, setIsLoggedIn] = useState<Boolean>(true)
+ 
+  const [isLoggedIn, setIsLoggedIn] = useState<Boolean>(false)
 
   const colorScheme = useColorScheme();
-
 
   const [state, dispatch] = React.useReducer(
     (prevState: any, action: any) => {
@@ -99,6 +98,13 @@ function BottomTabNavigator() {
     setIsLoggedIn(true)
   }
 
+  async function getValueFor() {
+    let result = await SecureStore.getItemAsync('token');
+    if (result) {
+      return await result;
+    } 
+  }
+
   React.useEffect(() => {
     // Fetch the token from storage then navigate to our appropriate place
     const bootstrapAsync = async () => {
@@ -109,39 +115,36 @@ function BottomTabNavigator() {
         token = await SecureStore.getItemAsync('token');
         refresh_token = await SecureStore.getItemAsync('refresh_token');
 
-        // if (typeof token == 'string') {
-        //   console.log('CHECKING IF TOKEN IS VALID')
-        //   // request /me endopint to check if token is valid
-        //   axios.get(endpoints.profile, {
-        //     headers: {
-        //       'Authorization': `Bearer ${token}` 
-        //     }
-        //   })
-        //   .then((response) => {
-        //     console.log(response.status)
-        //     if(response.status == 200){
-        //       setIsLoggedIn(true)
-        //       console.log('token is valid')
-        //       dispatch({ type: 'LOGGED_IN', token: token });
-        //     }
-        //   })
-        //   .catch((error) => {
-        //     if(error.response.status == 401){
-        //       console.log('token is not valid')
-        //       dispatch({ type: 'LOGGED_OUT', token: token });
-        //     }
-        //   })
-        // }
+        // check if token is valid, request on /me
+        const getProfile = async () => {
+          let token = await getValueFor()
+        
+          axios.get(endpoints.profile, {
+            headers: {
+              'Authorization': `Bearer ${token}` 
+            }
+          })
+          .then((response) => {
+            console.log(response)
+            if(response.status == 200){
+              setIsLoggedIn(true)
+            }
+          })
+          .then(() => {
 
-        if (token == null){
-          dispatch({ type: 'LOGGED_OUT', token: token });
-        }
+          })
+          .catch((error) => {
+            console.log(error)
+          })
+        };
 
+        // if not 200 prompt to log in
+
+        getProfile()
 
       } catch (e) {
         // Restoring token failed
       }
-
 
       
     };

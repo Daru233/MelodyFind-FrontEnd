@@ -1,4 +1,4 @@
-import { StyleSheet, Modal, Alert, Pressable, ActivityIndicator } from "react-native";
+import { StyleSheet, Modal, Alert, Pressable, ActivityIndicator, SafeAreaView } from "react-native";
 import React, { useEffect, useState } from 'react';
 import { Text, View } from '../components/Themed';
 import ScrollComponent from '../components/ScrollComponent'
@@ -10,8 +10,8 @@ import * as SecureStore from 'expo-secure-store';
 export default function GenresScreen() {
 
   const [modalVisible, setModalVisible] = useState(false);
-  const [chosenGenre, setChosenGenre] = useState('');
-  const [songData, setSongData] = useState<any>([]);
+  const [chosenGenre, setChosenGenre] = useState<String>('');
+  const [songData, setSongData] = useState<any>();
   const [hasDataLoaded, setHasDataLoaded] = useState(false)
 
   const generateColor = () => {
@@ -21,31 +21,35 @@ export default function GenresScreen() {
     return `#${randomColor}`;
   };
 
-  useEffect(() => {
-    console.log("Logged from useEffect CHOOSE GENRE!")
+
+  const getSongs = async (props: any) => {
+
+    // console.log(props)
+    let token = await getValueFor()
   
-    const getSongs = async () => {
-      let token = await getValueFor()
-    
-      axios.get(endpoints.recommendations, {
-        headers: {
-          'Authorization': `Bearer ${token}` 
-        }
-      })
-      .then((response) => {
-        setSongData(response.data)
-      })
-      .then(() => {
-        setHasDataLoaded(true)
-      })
-      .catch((error) => {
-        console.log(error)
-      })
-    };
-  
-    // UNCOMMENT
-    // getSongs();
-  }, [])
+    axios.get(endpoints.recommendations + '/' + props, {
+      headers: {
+        'Authorization': `Bearer ${token}` 
+      }
+    })
+    .then((response) => {
+      // console.log(response.data.items)
+      setSongData(response.data.items)
+    })
+    .then(() => {
+      setHasDataLoaded(true)
+    })
+    .then(() => {
+      setModalVisible(true)
+    })
+    .catch((error) => {
+      console.log(error)
+    })
+    .then(() => {
+      setModalVisible(true)
+    })
+
+  };
 
 
   async function getValueFor() {
@@ -57,10 +61,10 @@ export default function GenresScreen() {
     }
   }
 
-
   const GenreContainer = (props: any) => {
+    const genre = props.genre
     return(
-      <Pressable onPress={() => {setModalVisible(!modalVisible); setChosenGenre(props.genre)}}
+      <Pressable onPress={() => {getSongs(genre); setChosenGenre(genre);}}
       style={[styles.genreContainer, {backgroundColor: generateColor()}]}>
       <Text style={styles.genreItem}>
         {props.genre}
@@ -69,21 +73,21 @@ export default function GenresScreen() {
     )
   }
 
+  
   const TestComponent = () => {
     return(
-      <View>
+      <SafeAreaView>
 
         {hasDataLoaded ? 
         <>
           <ScrollComponent data={songData}></ScrollComponent> 
-          <ActivityIndicator size='large' color='#00ff00'/>
         </>
         :
         <ActivityIndicator size='large' color='#00ff00'/>}
         <Text>
-         This is a test to see if a component can be rendered in a modal
+        The songs don't seem to be loading right now!
         </Text>
-      </View>
+      </SafeAreaView>
     )
   }
 
@@ -100,18 +104,18 @@ export default function GenresScreen() {
         }}
       >
 
-        <View style={styles.centeredView}>
+        <SafeAreaView style={styles.centeredView}>
           <Text style={styles.modalText}>Discover {chosenGenre}</Text>
           <Pressable
             style={[styles.button, styles.buttonClose]}
-            onPress={() => setModalVisible(!modalVisible)}
+            onPress={() => {setSongData([]); setHasDataLoaded(false); setModalVisible(!modalVisible);}}
           >
             <Text style={styles.textStyle}>back</Text>
           </Pressable>
 
           <TestComponent />
 
-        </View>
+        </SafeAreaView>
 
       </ Modal>
 
@@ -234,7 +238,7 @@ const styles = StyleSheet.create({
     backgroundColor: "white",
     borderRadius: 20,
     padding: 35,
-    alignItems: "center",
+    alignItems: "flex-end",
     shadowColor: "#000",
     shadowOffset: {
       width: 0,
@@ -248,7 +252,7 @@ const styles = StyleSheet.create({
     flex: 1,
     justifyContent: "center",
     alignItems: "center",
-    marginTop: 22
+    marginTop: 50
   },
   modalText: {
     fontSize: 32,

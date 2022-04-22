@@ -5,6 +5,7 @@ import axios from 'axios';
 import * as SecureStore from 'expo-secure-store';
 import { AuthContext } from '../navigation/AuthContext';
 import { makeRedirectUri, ResponseType, useAuthRequest} from 'expo-auth-session';
+import { endpoints } from '../endpoint'
 
 export default function SignIn() {
 
@@ -19,7 +20,7 @@ export default function SignIn() {
     {
       responseType: ResponseType.Code,
       clientId: 'fd131b024b8b40a998aecdaba339a2af',
-      scopes: ['user-read-email', 'playlist-modify-public', 'user-read-playback-state', 'user-modify-playback-state', 'user-library-read', 'user-top-read'],
+      scopes: ['user-read-email', 'playlist-modify-public', 'user-read-playback-state', 'user-modify-playback-state', 'user-library-read', 'user-top-read', 'user-library-modify'],
       // In order to follow the "Authorization Code Flow" to fetch token after authorizationEndpoint
       // this must be set to false
       usePKCE: false,
@@ -70,7 +71,6 @@ export default function SignIn() {
         </Text>
       </Pressable>
 
-      {/* <Text style={styles.paragraph}>Connect to your Spotify Account</Text> */}
     </View>
   );
 }
