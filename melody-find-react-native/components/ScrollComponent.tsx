@@ -135,6 +135,7 @@ async function addTrackToPlayList(playlistId: any, currentTrack: string){
 
       <SafeAreaView style={styles.playlistContainer}>
         <Pressable
+          style={[styles.button, styles.buttonClose]}
           onPress={() => {setModalVisible(!modalVisible);}}
         >
           <Text style={styles.textStyle}>back</Text>
@@ -340,7 +341,7 @@ const styles = StyleSheet.create({
       marginHorizontal: 20,
       color: "white",
       fontWeight: "bold",
-      textAlign: "center"
+      textAlign: "center",
     },
     playlisRenderStyle: {
       marginTop: 20,
@@ -349,5 +350,17 @@ const styles = StyleSheet.create({
       backgroundColor: '#35363A',
       borderRadius: 30
     },
+    button: {
+      borderRadius: 20,
+      marginHorizontal: 20,
+      elevation: 2
+    },
+    buttonOpen: {
+      backgroundColor: "#F194FF",
+    },
+    buttonClose: {
+      backgroundColor: "#2196F3",
+    },
+    
      
   });

@@ -88,21 +88,15 @@ function BottomTabNavigator() {
 
   const loggedIn = useMemo(() => ({isLoggedIn, setIsLoggedIn}), [isLoggedIn, setIsLoggedIn])
 
-  async function set_token(key: string, value: string) {
+  
+  async function setToken(key: string, value: string) {
     await SecureStore.setItemAsync(key, value);
     setIsLoggedIn(true)
   }
 
-  async function set_refresh_token(key: string, value: string) {
+  async function setRefreshToken(key: string, value: string) {
     await SecureStore.setItemAsync(key, value);
     setIsLoggedIn(true)
-  }
-
-  async function getValueFor() {
-    let result = await SecureStore.getItemAsync('token');
-    if (result) {
-      return await result;
-    } 
   }
 
   React.useEffect(() => {
@@ -117,7 +111,7 @@ function BottomTabNavigator() {
 
         // check if token is valid, request on /me
         const getProfile = async () => {
-          let token = await getValueFor()
+          // let token = await getValueFor()
         
           axios.get(endpoints.profile, {
             headers: {
@@ -128,17 +122,38 @@ function BottomTabNavigator() {
             console.log(response)
             if(response.status == 200){
               setIsLoggedIn(true)
-            }
+            } 
+          })
+          .catch((error) => {
+            console.log(error)
           })
           .then(() => {
+            console.log('trying refresh')
+            tryRefreshToken()
+          }
+          )
+        };
 
+        // if not 200 prompt to log in
+
+        const tryRefreshToken = () => {
+          console.log('Inside refresh function')
+          axios.get(`http://192.168.0.4:5000//exchange/${refresh_token}`, {
+          })
+          .then((response) => {
+            console.log(response)
+            if(response.status == 200){
+              setToken('token', response['access_token']);
+              setRefreshToken('refresh_token', response['refresh_token'])
+            } 
+          })
+          .then(() => {
+            setIsLoggedIn(true) 
           })
           .catch((error) => {
             console.log(error)
           })
         };
-
-        // if not 200 prompt to log in
 
         getProfile()
 
